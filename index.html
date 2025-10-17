@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор номеров</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .license-plate {
+            background: white;
+            border-radius: 5px;
+            padding: 12px 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid #333;
+            margin-bottom: 20px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .plate-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .plate-number {
+            font-family: 'Arial Narrow', Arial, sans-serif;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #000;
+            white-space: nowrap;
+        }
+        
+        .vertical-separator {
+            width: 2px;
+            height: 44px;
+            background: #333;
+            flex-shrink: 0;
+        }
+        
+        .right-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding-left: 4px;
+        }
+        
+        .plate-region {
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            color: #000;
+            margin-bottom: 2px;
+        }
+        
+        .plate-footer {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .plate-rus {
+            font-size: 12px;
+            color: #333;
+        }
+        
+        .flag {
+            width: 24px;
+            height: 16px;
+            background: linear-gradient(to bottom, 
+                white 0%, white 33%, 
+                #0055BB 33%, #0055BB 66%, 
+                #E30A17 66%, #E30A17 100%);
+            border: 1px solid rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        
+        .generate-btn {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            margin-bottom: 16px;
+            transition: background 0.2s;
+        }
+        
+        .generate-btn:active {
+            background: #1b5e20;
+        }
+        
+        .history {
+            width: 100%;
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        
+        .history-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #333;
+        }
+        
+        .history-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            font-family: 'Arial Narrow', Arial, sans-serif;
+            font-size: 14px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Генератор автомобильных номеров</h1>
+        
+        <div class="license-plate">
+            <div class="plate-content">
+                <div class="plate-number" id="plateNumber">А000АА</div>
+                <div class="vertical-separator"></div>
+                <div class="right-section">
+                    <div class="plate-region" id="plateRegion">116</div>
+                    <div class="plate-footer">
+                        <div class="plate-rus">RUS</div>
+                        <div class="flag"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="generate-btn" id="generateBtn">Сгенерировать номер</button>
+        
+        <div class="history">
+            <div class="history-title">История генерации</div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Элементы DOM
+        const plateNumber = document.getElementById('plateNumber');
+        const plateRegion = document.getElementById('plateRegion');
+        const generateBtn = document.getElementById('generateBtn');
+        const historyList = document.getElementById('historyList');
+        
+        // Буквы для российских номеров
+        const letters = 'АВЕКМНОРСТУХ';
+        
+        // История генерации
+        let history = [];
+        const MAX_HISTORY = 5;
+        
+        // Генерация номера
+        function generatePlate() {
+            // Генерация основной части (А000АА)
+            let number = '';
+            number += letters.charAt(Math.floor(Math.random() * letters.length));
+            number += Math.floor(Math.random() * 10);
+            number += Math.floor(Math.random() * 10);
+            number += Math.floor(Math.random() * 10);
+            number += letters.charAt(Math.floor(Math.random() * letters.length));
+            number += letters.charAt(Math.floor(Math.random() * letters.length));
+            
+            // Генерация региона (01-199)
+            const region = Math.floor(Math.random() * 199) + 1;
+            const regionStr = region < 10 ? '0' + region : region.toString();
+            
+            // Обновление отображения
+            plateNumber.textContent = number;
+            plateRegion.textContent = regionStr;
+            
+            // Добавление в историю
+            addToHistory(number + ' ' + regionStr);
+            
+            // Анимация
+            plateNumber.style.transform = 'scale(1.05)';
+            plateNumber.style.transition = 'transform 0.1s';
+            setTimeout(() => {
+                plateNumber.style.transform = 'scale(1)';
+            }, 100);
+            
+            // Вибрация (если доступно)
+            if (navigator.vibrate) navigator.vibrate(30);
+        }
+        
+        // Добавление в историю
+        function addToHistory(plate) {
+            const now = new Date();
+            const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            history.unshift({plate, time});
+            if (history.length > MAX_HISTORY) {
+                history.pop();
+            }
+            
+            updateHistory();
+        }
+        
+        // Обновление истории
+        function updateHistory() {
+            historyList.innerHTML = '';
+            history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.textContent = `${item.time}: ${item.plate}`;
+                historyList.appendChild(div);
+            });
+        }
+        
+        // Обработчик кнопки
+        generateBtn.addEventListener('click', generatePlate);
+        
+        // Генерация первого номера
+        generatePlate();
+        
+        // Обработка ошибок
+        window.addEventListener('error', function(e) {
+            console.error(e);
+            tg.showAlert('Ошибка: ' + e.message);
+        });
+    </script>
+</body>
+  </html>
